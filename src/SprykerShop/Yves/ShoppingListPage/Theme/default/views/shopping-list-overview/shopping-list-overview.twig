@@ -3,7 +3,11 @@
 {% define data = {
     shoppingListCollection: _view.shoppingListCollection,
     shoppingListForm: _view.shoppingListForm,
-    shoppingListResponse: _view.shoppingListResponse
+    shoppingListResponse: _view.shoppingListResponse,
+    labels: {
+        overviewTitle: 'customer.account.shopping_list.overview.title' | trans,
+        newFormTitle: 'customer.account.shopping_list.overview.form.new' | trans
+    }
 } %}
 
 {% block customerContent %}
