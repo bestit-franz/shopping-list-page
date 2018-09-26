@@ -5,13 +5,15 @@
  * Use of this software requires acceptance of the Evaluation License Agreement. See LICENSE file.
  */
 
-namespace SprykerShop\Yves\ShoppingListPage\Form\DataProvider;
+namespace SprykerShop\Yves\ShoppingListPage\Business;
 
 use Generated\Shared\Transfer\ShoppingListTransfer;
 use SprykerShop\Yves\ShoppingListPage\Dependency\Client\ShoppingListPageToCustomerClientInterface;
 use SprykerShop\Yves\ShoppingListPage\Dependency\Client\ShoppingListPageToShoppingListClientInterface;
+use SprykerShop\Yves\ShoppingListPage\Form\ShoppingListFromCartForm;
+use Symfony\Component\Form\FormInterface;
 
-class ShoppingListFormDataProvider
+class CreateFromCartHandler implements CreateFromCartHandlerInterface
 {
     /**
      * @var \SprykerShop\Yves\ShoppingListPage\Dependency\Client\ShoppingListPageToShoppingListClientInterface
@@ -27,26 +29,30 @@ class ShoppingListFormDataProvider
      * @param \SprykerShop\Yves\ShoppingListPage\Dependency\Client\ShoppingListPageToShoppingListClientInterface $shoppingListClient
      * @param \SprykerShop\Yves\ShoppingListPage\Dependency\Client\ShoppingListPageToCustomerClientInterface $customerClient
      */
-    public function __construct(ShoppingListPageToShoppingListClientInterface $shoppingListClient, ShoppingListPageToCustomerClientInterface $customerClient)
-    {
+    public function __construct(
+        ShoppingListPageToShoppingListClientInterface $shoppingListClient,
+        ShoppingListPageToCustomerClientInterface $customerClient
+    ) {
         $this->shoppingListClient = $shoppingListClient;
         $this->customerClient = $customerClient;
     }
 
     /**
-     * @param int $idShoppingList
+     * @param \Symfony\Component\Form\FormInterface $cartToShoppingListForm
      *
      * @return \Generated\Shared\Transfer\ShoppingListTransfer
      */
-    public function getData(int $idShoppingList): ShoppingListTransfer
+    public function createShoppingListFromCart(FormInterface $cartToShoppingListForm): ShoppingListTransfer
     {
-        $customerTransfer = $this->customerClient->getCustomer();
+        $shoppingListFromCartRequest = $cartToShoppingListForm->getData();
+        if (!$shoppingListFromCartRequest->getShoppingListName()) {
+            $shoppingListFromCartRequest->setShoppingListName(
+                $cartToShoppingListForm->get(ShoppingListFromCartForm::FIELD_NEW_SHOPPING_LIST_NAME_INPUT)->getData()
+            );
+        }
+        $shoppingListFromCartRequest->setCustomer($this->customerClient->getCustomer());
 
-        $shoppingListTransfer = new ShoppingListTransfer();
-        $shoppingListTransfer
-            ->setIdShoppingList($idShoppingList)
-            ->setIdCompanyUser($customerTransfer->getCompanyUserTransfer()->getIdCompanyUser());
-
-        return $this->shoppingListClient->getShoppingList($shoppingListTransfer);
+        return $this->shoppingListClient
+            ->createShoppingListFromQuote($shoppingListFromCartRequest);
     }
 }
